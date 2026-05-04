@@ -113,7 +113,7 @@ to the initial process. To make them available in every `exec` session, write
 a profile script once after creating the container:
 
 ```bash
-podman exec gascity bash -c 'cat > /etc/profile.d/vertex.sh << "EOF"
+podman exec gascity sudo bash -c 'cat > /etc/profile.d/vertex.sh << "EOF"
 export GOOGLE_APPLICATION_CREDENTIALS=/home/gascity/.config/gcloud/application_default_credentials.json
 export CLAUDE_CODE_USE_VERTEX=1
 export CLOUD_ML_REGION=global
