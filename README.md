@@ -37,11 +37,101 @@ make build
 
 ## Usage
 
-- Run an interactive session inside the container:
+### Basic
 
-  ```bash
-  podman run --rm -it ghcr.io/gurnben/gastown-fedora-container:latest
-  ```
+Run an interactive session with your projects and API keys:
+
+```bash
+podman run --rm -it \
+  -v ~/Projects:/workspace:Z \
+  -v ~/.config:/root/.config:Z \
+  -e ANTHROPIC_API_KEY \
+  -e OPENAI_API_KEY \
+  -e GEMINI_API_KEY \
+  ghcr.io/gurnben/gastown-fedora-container:latest
+```
+
+### Google Cloud / Vertex AI
+
+Run with Vertex AI authentication and a GCP service account key:
+
+```bash
+podman run --rm -it \
+  -v ~/Projects:/workspace:Z \
+  -v ~/.config:/root/.config:Z \
+  -v /path/to/gcp-service-account.json:/root/.config/gcloud/application_default_credentials.json:ro,Z \
+  -e GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json \
+  -e CLAUDE_CODE_USE_VERTEX=1 \
+  -e CLOUD_ML_REGION=global \
+  -e ANTHROPIC_VERTEX_PROJECT_ID \
+  -e VERTEXAI_PROJECT="$ANTHROPIC_VERTEX_PROJECT_ID" \
+  -e VERTEXAI_LOCATION=global \
+  -e GOOGLE_CLOUD_PROJECT="$ANTHROPIC_VERTEX_PROJECT_ID" \
+  -e VERTEX_LOCATION=global \
+  -e GOOGLE_CLOUD_LOCATION=global \
+  -e GEMINI_API_KEY \
+  ghcr.io/gurnben/gastown-fedora-container:latest
+```
+
+> **Tip:** Export environment variables in your shell before running —
+> bare `-e VAR` passes the host value through automatically.
+
+> **Note:** Gascity's `gc init` readiness check only recognizes first-party
+> `claude.ai` OAuth login. When using Vertex AI, the check will report
+> "Claude Code: needs authentication" even though Claude is fully functional.
+> Use the `--skip-provider-readiness` flag to bypass it:
+>
+> ```bash
+> gc init --skip-provider-readiness ~/my-workspace
+> ```
+
+### Running in the Background
+
+Start the container detached and exec into it as needed. Use `--pids-limit=-1`
+to remove the default process limit — gascity spawns many subprocesses via
+tmux, dolt, and agent runtimes that can exceed Podman's default of 2048:
+
+```bash
+# Start detached
+podman run -d --name gascity --pids-limit=-1 \
+  -v ~/Projects:/workspace:Z \
+  -v ~/.config:/root/.config:Z \
+  ghcr.io/gurnben/gastown-fedora-container:latest \
+  sleep infinity
+
+# Attach an interactive shell
+podman exec -it gascity bash
+
+# Stop / restart / remove
+podman stop gascity
+podman start gascity
+podman stop gascity && podman rm gascity
+```
+
+Environment variables passed via `-e` at `podman run` time are only visible
+to the initial process. To make them available in every `exec` session, write
+a profile script once after creating the container:
+
+```bash
+podman exec gascity bash -c 'cat > /etc/profile.d/vertex.sh << "EOF"
+export GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json
+export CLAUDE_CODE_USE_VERTEX=1
+export CLOUD_ML_REGION=global
+export ANTHROPIC_VERTEX_PROJECT_ID='"$ANTHROPIC_VERTEX_PROJECT_ID"'
+export VERTEXAI_PROJECT="$ANTHROPIC_VERTEX_PROJECT_ID"
+export VERTEXAI_LOCATION=global
+export GOOGLE_CLOUD_PROJECT="$ANTHROPIC_VERTEX_PROJECT_ID"
+export VERTEX_LOCATION=global
+export GOOGLE_CLOUD_LOCATION=global
+export GEMINI_API_KEY='"$GEMINI_API_KEY"'
+EOF'
+```
+
+Then use a login shell to pick up the variables automatically:
+
+```bash
+podman exec -it gascity bash -l
+```
 
 - Start with Compose (mounts a persistent workspace volume):
 
@@ -72,6 +162,7 @@ make build
 - Gascity ships with a skeleton `city.toml` at `/etc/skel/.config/gascity/city.toml` using the `bd` beads provider
 - Override by mounting your own config or setting `GC_BEADS=file` for a simpler file-based store
 - Each agentic runtime reads its own configuration from standard locations (`~/.config/crush/`, etc.)
+- For Vertex AI, set the environment variables shown above and mount your GCP service account key JSON
 
 ## Development
 
