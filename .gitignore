@@ -7,3 +7,5 @@
 *.log
 .agentready/
 node_modules/
+.idea/
+.vscode/
