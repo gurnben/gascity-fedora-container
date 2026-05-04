@@ -44,7 +44,7 @@ Run an interactive session with your projects and API keys:
 ```bash
 podman run --rm -it \
   -v ~/Projects:/workspace:Z \
-  -v ~/.config:/root/.config:Z \
+  -v ~/.config:/home/gascity/.config:Z \
   -e ANTHROPIC_API_KEY \
   -e OPENAI_API_KEY \
   -e GEMINI_API_KEY \
@@ -58,9 +58,9 @@ Run with Vertex AI authentication and a GCP service account key:
 ```bash
 podman run --rm -it \
   -v ~/Projects:/workspace:Z \
-  -v ~/.config:/root/.config:Z \
-  -v /path/to/gcp-service-account.json:/root/.config/gcloud/application_default_credentials.json:ro,Z \
-  -e GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json \
+  -v ~/.config:/home/gascity/.config:Z \
+  -v /path/to/gcp-service-account.json:/home/gascity/.config/gcloud/application_default_credentials.json:ro,Z \
+  -e GOOGLE_APPLICATION_CREDENTIALS=/home/gascity/.config/gcloud/application_default_credentials.json \
   -e CLAUDE_CODE_USE_VERTEX=1 \
   -e CLOUD_ML_REGION=global \
   -e ANTHROPIC_VERTEX_PROJECT_ID \
@@ -95,7 +95,7 @@ tmux, dolt, and agent runtimes that can exceed Podman's default of 2048:
 # Start detached
 podman run -d --name gascity --pids-limit=-1 \
   -v ~/Projects:/workspace:Z \
-  -v ~/.config:/root/.config:Z \
+  -v ~/.config:/home/gascity/.config:Z \
   ghcr.io/gurnben/gastown-fedora-container:latest \
   sleep infinity
 
@@ -114,7 +114,7 @@ a profile script once after creating the container:
 
 ```bash
 podman exec gascity bash -c 'cat > /etc/profile.d/vertex.sh << "EOF"
-export GOOGLE_APPLICATION_CREDENTIALS=/root/.config/gcloud/application_default_credentials.json
+export GOOGLE_APPLICATION_CREDENTIALS=/home/gascity/.config/gcloud/application_default_credentials.json
 export CLAUDE_CODE_USE_VERTEX=1
 export CLOUD_ML_REGION=global
 export ANTHROPIC_VERTEX_PROJECT_ID='"$ANTHROPIC_VERTEX_PROJECT_ID"'
@@ -174,6 +174,7 @@ podman exec -it gascity bash -l
 - Gascity ships with a skeleton `city.toml` at `/etc/skel/.config/gascity/city.toml` using the `bd` beads provider
 - Override by mounting your own config or setting `GC_BEADS=file` for a simpler file-based store
 - Each agentic runtime reads its own configuration from standard locations (`~/.config/crush/`, etc.)
+- The container runs as the non-root `gascity` user (with passwordless sudo) because Claude Code refuses to run as root
 - For Vertex AI, set the environment variables shown above and mount your GCP service account key JSON
 
 ## Development

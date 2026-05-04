@@ -111,4 +111,11 @@ RUN gc version && \
     gemini --version && \
     gh --version
 
+# ---- Create non-root user ----
+RUN useradd -m -s /bin/bash -G wheel gascity && \
+    echo "gascity ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/gascity
+
+USER gascity
+WORKDIR /home/gascity
+
 CMD ["/bin/bash"]
