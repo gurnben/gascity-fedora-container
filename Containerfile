@@ -38,6 +38,7 @@ LABEL name="gastown-fedora-container" \
 RUN dnf install -y \
         tmux \
         git \
+        gh \
         jq \
         procps-ng \
         lsof \
@@ -107,6 +108,7 @@ RUN gc version && \
     crush --version && \
     claude --version && \
     opencode -v && \
-    gemini --version
+    gemini --version && \
+    gh --version
 
 CMD ["/bin/bash"]
