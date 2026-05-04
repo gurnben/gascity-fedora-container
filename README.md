@@ -148,6 +148,18 @@ podman exec -it gascity bash -l
   gc start
   ```
 
+> **Note:** Containers do not run a user-level systemd instance, so
+> `gc start` will fail to install its supervisor as a systemd service.
+> Use foreground mode instead:
+>
+> ```bash
+> # Run the supervisor in a background tmux session
+> tmux new-session -d -s gc 'gc start --foreground'
+>
+> # Check on it anytime
+> tmux attach -t gc
+> ```
+
 - Launch an agentic runtime:
 
   ```bash
