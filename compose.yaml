@@ -1,0 +1,16 @@
+services:
+  gastown:
+    build:
+      context: .
+      dockerfile: Containerfile
+    image: ghcr.io/gurnben/gastown-fedora-container:latest
+    volumes:
+      - workspace:/workspace
+    working_dir: /workspace
+    environment:
+      - TERM=xterm-256color
+    stdin_open: true
+    tty: true
+
+volumes:
+  workspace:

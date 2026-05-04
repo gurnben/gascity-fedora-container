@@ -1,0 +1,7 @@
+.git
+.github
+*.md
+LICENSE
+.gitignore
+.dockerignore
+.agentready-config.yaml
