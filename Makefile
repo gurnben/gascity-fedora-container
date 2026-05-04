@@ -13,7 +13,7 @@ test: build
 	podman run --rm $(IMAGE_NAME):$(TAG) bd version
 	podman run --rm $(IMAGE_NAME):$(TAG) crush --version
 	podman run --rm $(IMAGE_NAME):$(TAG) claude --version
-	podman run --rm $(IMAGE_NAME):$(TAG) opencode version
+	podman run --rm $(IMAGE_NAME):$(TAG) opencode -v
 	podman run --rm $(IMAGE_NAME):$(TAG) gemini --version
 
 lint:

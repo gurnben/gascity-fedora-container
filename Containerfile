@@ -106,7 +106,7 @@ RUN gc version && \
     bd version && \
     crush --version && \
     claude --version && \
-    opencode version && \
+    opencode -v && \
     gemini --version
 
 CMD ["/bin/bash"]
