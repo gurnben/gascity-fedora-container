@@ -1,8 +1,12 @@
 # =============================================================================
 # Stage 1: Build gascity (gc) from source
 # =============================================================================
+# hadolint ignore=DL3007
 FROM registry.fedoraproject.org/fedora-toolbox:latest AS builder
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# hadolint ignore=DL3041
 RUN dnf install -y \
         golang \
         git \
@@ -10,13 +14,16 @@ RUN dnf install -y \
     && dnf clean all
 
 WORKDIR /build
-RUN git clone https://github.com/gastownhall/gascity.git .
-RUN make build
+RUN git clone https://github.com/gastownhall/gascity.git . && \
+    make build
 
 # =============================================================================
 # Stage 2: Final container image
 # =============================================================================
+# hadolint ignore=DL3007
 FROM registry.fedoraproject.org/fedora-toolbox:latest
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 LABEL name="gastown-fedora-container" \
       summary="Fedora toolbox with gascity and agentic coding runtimes" \
@@ -27,6 +34,7 @@ LABEL name="gastown-fedora-container" \
       url="https://github.com/gurnben/gastown-fedora-container"
 
 # ---- System dependencies for gascity ----
+# hadolint ignore=DL3041
 RUN dnf install -y \
         tmux \
         git \
@@ -42,20 +50,12 @@ RUN dnf install -y \
 COPY --from=builder /build/bin/gc /usr/local/bin/gc
 
 # ---- Install dolt ----
-RUN ARCH=$(uname -m) && \
-    if [ "$ARCH" = "x86_64" ]; then \
-        DOLT_ARCH="amd64"; \
-    elif [ "$ARCH" = "aarch64" ]; then \
-        DOLT_ARCH="arm64"; \
-    else \
-        echo "Unsupported architecture: $ARCH" && exit 1; \
-    fi && \
-    curl -fsSL "https://github.com/dolthub/dolt/releases/latest/download/install.sh" | bash
+RUN curl -fsSL "https://github.com/dolthub/dolt/releases/latest/download/install.sh" | bash
 
 # ---- Install beads (bd) ----
 RUN curl -fsSL https://raw.githubusercontent.com/gastownhall/beads/main/scripts/install.sh | bash
 
-# ---- Add Charm RPM repository for crush ----
+# ---- Add RPM repositories and install crush, claude-code, opencode ----
 RUN printf '%s\n' \
         '[charm]' \
         'name=Charm' \
@@ -63,10 +63,8 @@ RUN printf '%s\n' \
         'enabled=1' \
         'gpgcheck=1' \
         'gpgkey=https://repo.charm.sh/yum/gpg.key' \
-    > /etc/yum.repos.d/charm.repo
-
-# ---- Add Claude Code RPM repository ----
-RUN printf '%s\n' \
+    > /etc/yum.repos.d/charm.repo && \
+    printf '%s\n' \
         '[claude-code]' \
         'name=Claude Code' \
         'baseurl=https://downloads.claude.ai/claude-code/rpm/stable' \
@@ -75,13 +73,7 @@ RUN printf '%s\n' \
         'gpgkey=https://downloads.claude.ai/keys/claude-code.asc' \
     > /etc/yum.repos.d/claude-code.repo
 
-# ---- Install crush and claude-code via native RPMs ----
-RUN dnf install -y \
-        crush \
-        claude-code \
-    && dnf clean all
-
-# ---- Install opencode from GitHub release RPM ----
+# hadolint ignore=DL3041
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "x86_64" ]; then \
         OC_ARCH="amd64"; \
@@ -91,16 +83,17 @@ RUN ARCH=$(uname -m) && \
         echo "Unsupported architecture: $ARCH" && exit 1; \
     fi && \
     dnf install -y \
+        crush \
+        claude-code \
         "https://github.com/opencode-ai/opencode/releases/download/v0.0.55/opencode-linux-${OC_ARCH}.rpm" \
     && dnf clean all
 
-# ---- Install Node.js for gemini-cli ----
-RUN dnf install -y nodejs npm && dnf clean all
+# ---- Install Node.js and gemini-cli ----
+# hadolint ignore=DL3041,DL3016
+RUN dnf install -y nodejs npm && dnf clean all && \
+    npm install -g @google/gemini-cli
 
-# ---- Install gemini-cli via npm ----
-RUN npm install -g @google/gemini-cli
-
-# ---- Configure gascity to use file-based beads by default ----
+# ---- Configure gascity to use bd beads provider by default ----
 RUN mkdir -p /etc/skel/.config/gascity && \
     printf '%s\n' \
         '[beads]' \
