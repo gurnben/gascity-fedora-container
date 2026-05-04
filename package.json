@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "description": "Dependency tracking for container-installed npm packages",
+  "dependencies": {
+    "@google/gemini-cli": "*"
+  }
+}
