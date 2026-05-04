@@ -3,3 +3,7 @@
 *~
 .env
 .env.*
+.DS_Store
+*.log
+.agentready/
+node_modules/
