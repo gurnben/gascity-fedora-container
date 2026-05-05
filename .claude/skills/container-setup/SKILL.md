@@ -1,12 +1,12 @@
 ---
 name: container-setup
-description: Use when the user wants to start, stop, configure, or debug the gastown-fedora-container with podman — including Vertex AI setup, gascity initialization, and session troubleshooting.
+description: Use when the user wants to start, stop, configure, or debug the gastown-fedora-container with podman — including Vertex AI setup, ADR pipeline pack, gascity initialization, and session troubleshooting.
 ---
 
 # Gastown Fedora Container Setup
 
 This skill automates standing up and configuring the gastown-fedora-container
-for agentic development with gascity.
+for agentic development with gascity and the ADR pipeline pack.
 
 ## Prerequisites
 
@@ -96,15 +96,7 @@ export GEMINI_API_KEY='"$GEMINI_API_KEY"'
 EOF'
 ```
 
-## Step 4 — Enter the container
-
-```bash
-podman exec -it gascity bash -l
-```
-
-The `-l` flag starts a login shell that sources `/etc/profile.d/`.
-
-## Step 5 — Configure identities and verify tools
+## Step 4 — Configure identities
 
 Ensure dolt and git have identities configured (required for the beads store):
 
@@ -112,88 +104,99 @@ Ensure dolt and git have identities configured (required for the beads store):
 podman exec gascity bash -lc 'dolt config --global --add user.name "gascity" && dolt config --global --add user.email "gascity@container.local" && git config --global user.name "gascity" && git config --global user.email "gascity@container.local"'
 ```
 
-Verify tools:
+## Step 5 — Verify tools and authentication
 
 ```bash
-claude --version
-gc version
-gh --version
+podman exec gascity bash -lc 'claude --version && gc version && gh --version'
 ```
 
 Test Vertex AI authentication:
 
 ```bash
-claude -p "respond with hello" --output-format text
+podman exec gascity bash -lc 'claude -p "respond with hello" --output-format text'
 ```
 
-## Step 6 — Initialize a gascity workspace with the ADR pipeline pack
-
-The container ships an ADR pipeline pack at `/opt/adr-pipeline/` with agents
-for architect, reviewer, planner, developer pool, QE, and senior reviewer.
+## Step 6 — Initialize a gascity workspace
 
 ```bash
-cd /workspace
-gc init --skip-provider-readiness .
+podman exec gascity bash -lc 'cd /workspace && gc init --skip-provider-readiness .'
 ```
 
-When prompted for a template, choose `3. custom`. Then import the pack:
-
-```bash
-# Add the pack as an import in pack.toml
-cat >> pack.toml << 'EOF'
-
-[imports.pipeline]
-source = "/opt/adr-pipeline"
-export = true
-EOF
-
-# Install the import
-gc import install
-```
+When prompted, choose `3. custom` for the template and `1. Claude Code` for the
+agent. Ignore the systemd warning — it is expected in containers.
 
 > The `--skip-provider-readiness` flag is required when using Vertex AI because
 > gascity's readiness check only recognizes first-party `claude.ai` OAuth login.
 
-### Using the ADR pipeline
+## Step 7 — Import the ADR pipeline pack
 
-The pack provides two formulas:
-
-**Architecture phase** (design → review → human approval):
 ```bash
-gc formula cook mol-architecture --var feature="My Feature"
-gc sling architect <root-bead-id>
+podman exec gascity bash -lc 'cd /workspace && cat >> pack.toml << "EOF"
+
+[imports.pipeline]
+source = "/opt/adr-pipeline"
+export = true
+EOF'
+podman exec gascity bash -lc 'cd /workspace && gc import install'
 ```
 
-**Development phase** (plan → develop → QE + senior review → verify):
-```bash
-gc sling planner "Implement ADR: <title> — see docs/adr/00XX-*.md"
-# Or use the formula directly:
-gc formula cook mol-dev-pipeline --var feature="My Feature" --var adr="docs/adr/00XX-*.md"
-```
+## Step 8 — Start the gascity supervisor
 
-## Step 7 — Start the gascity supervisor
-
-Containers do not have a user-level systemd instance. Start the supervisor in
-foreground mode inside a tmux session:
+Unregister the auto-registered city (from gc init) and start in foreground mode:
 
 ```bash
-tmux new-session -d -s gc 'gc start --foreground'
+podman exec gascity bash -lc 'cd /workspace && gc unregister /workspace 2>/dev/null; tmux new-session -d -s gc "gc start --foreground"'
 ```
 
 Check on it anytime:
 
 ```bash
-tmux attach -t gc
+podman exec gascity bash -lc 'tmux attach -t gc'
 ```
 
-## Step 8 — Verify sessions
+## Step 9 — Verify sessions
+
+Wait ~15 seconds for sessions to start, then:
 
 ```bash
-gc session list
-gc doctor
+podman exec gascity bash -lc 'cd /workspace && gc session list'
+podman exec gascity bash -lc 'cd /workspace && gc doctor'
 ```
 
-All sessions should show `active` state. Doctor should report all checks passing.
+All named sessions (architect, reviewer, planner, qe, senior) should show
+`active` state. Doctor should report all checks passing.
+
+## Step 10 — Enter the container
+
+```bash
+podman exec -it gascity bash -l
+```
+
+## Using the ADR Pipeline
+
+### Architecture phase (design → review → human approval)
+
+```bash
+gc formula cook mol-architecture --var feature="My Feature"
+gc sling architect <bead-id>
+```
+
+The architect writes an ADR and iterates with the reviewer (up to 3 rounds).
+When they converge, you receive a mail notification. Check with `gc mail inbox`.
+Review the ADR and approve the human gate to proceed.
+
+### Development phase (plan → develop → QE + senior review → verify)
+
+```bash
+gc formula cook mol-dev-pipeline \
+  --var feature="My Feature" \
+  --var adr="docs/adr/00XX-my-feature.md"
+gc sling planner <bead-id>
+```
+
+The planner reads the ADR, creates parallel tasks with file ownership, dispatches
+to the dog pool, then QE and senior review run in parallel. Fix cycles loop, and
+the planner verifies against the ADR.
 
 ## Troubleshooting
 
@@ -227,7 +230,7 @@ Expected in containers — systemd is not available. Use
 
 Use `gc init --skip-provider-readiness` when using Vertex AI.
 
-### Mayor/boot sessions stuck in failed-create from prior runs
+### Sessions stuck in failed-create from prior runs
 
 Delete the stale beads and let the supervisor recreate them:
 
