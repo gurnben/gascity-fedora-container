@@ -118,4 +118,10 @@ RUN useradd -m -s /bin/bash -G wheel gascity && \
 USER gascity
 WORKDIR /home/gascity
 
+# ---- Configure dolt and git identity defaults ----
+RUN dolt config --global --add user.name "gascity" && \
+    dolt config --global --add user.email "gascity@container.local" && \
+    git config --global user.name "gascity" && \
+    git config --global user.email "gascity@container.local"
+
 CMD ["/bin/bash"]

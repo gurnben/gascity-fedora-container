@@ -42,7 +42,7 @@ make build
 Run an interactive session with your projects and API keys:
 
 ```bash
-podman run --rm -it \
+podman run --rm -it --userns=keep-id:uid=1000,gid=1000 \
   -v ~/Projects:/workspace:Z \
   -v ~/.config:/home/gascity/.config:Z \
   -e ANTHROPIC_API_KEY \
@@ -56,7 +56,7 @@ podman run --rm -it \
 Run with Vertex AI authentication and a GCP service account key:
 
 ```bash
-podman run --rm -it \
+podman run --rm -it --userns=keep-id:uid=1000,gid=1000 \
   -v ~/Projects:/workspace:Z \
   -v ~/.config:/home/gascity/.config:Z \
   -v /path/to/gcp-service-account.json:/home/gascity/.config/gcloud/application_default_credentials.json:ro,Z \
@@ -93,7 +93,7 @@ tmux, dolt, and agent runtimes that can exceed Podman's default of 2048:
 
 ```bash
 # Start detached
-podman run -d --name gascity --pids-limit=-1 \
+podman run -d --name gascity --pids-limit=-1 --userns=keep-id:uid=1000,gid=1000 \
   -v ~/Projects:/workspace:Z \
   -v ~/.config:/home/gascity/.config:Z \
   ghcr.io/gurnben/gastown-fedora-container:latest \
@@ -174,7 +174,9 @@ podman exec -it gascity bash -l
 - Gascity ships with a skeleton `city.toml` at `/etc/skel/.config/gascity/city.toml` using the `bd` beads provider
 - Override by mounting your own config or setting `GC_BEADS=file` for a simpler file-based store
 - Each agentic runtime reads its own configuration from standard locations (`~/.config/crush/`, etc.)
-- The container runs as the non-root `gascity` user (with passwordless sudo) because Claude Code refuses to run as root
+- The container runs as the non-root `gascity` user (UID 1000) because Claude Code refuses to run as root
+- Use `--userns=keep-id:uid=1000,gid=1000` so host file mounts are accessible to the container user
+- Dolt and git identities are pre-configured with defaults; override with `dolt config` / `git config` as needed
 - For Vertex AI, set the environment variables shown above and mount your GCP service account key JSON
 
 ## Development
