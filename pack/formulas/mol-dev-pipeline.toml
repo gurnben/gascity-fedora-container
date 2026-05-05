@@ -1,0 +1,73 @@
+# Development phase: plan → develop → QE + senior review (parallel) → fix cycle → final check
+formula     = "mol-dev-pipeline"
+description = "ADR-driven development pipeline: plan, implement, validate, review, verify"
+version     = 1
+type        = "workflow"
+phase       = "liquid"
+pour        = true
+
+[vars.adr]
+description = "Path to the approved ADR document"
+required    = true
+
+[vars.feature]
+description = "Short feature name for task titles"
+required    = true
+
+# Step 1: Planner reads ADR and creates work breakdown
+[[steps]]
+id          = "plan"
+title       = "Plan work: {{feature}}"
+description = "Read the approved ADR at {{adr}}. Break the work into parallel tasks with explicit file ownership boundaries. Dispatch tasks to the dog pool."
+type        = "task"
+assignee    = "planner"
+
+# Step 2: Development (dog pool, parallel)
+# The planner dynamically creates and slings sub-beads to the dog pool.
+# This step represents the container for all dev work.
+[[steps]]
+id          = "develop"
+title       = "Implement: {{feature}}"
+description = "Development work dispatched by the planner. Dog pool agents implement their assigned tasks within file ownership boundaries."
+type        = "task"
+needs       = ["plan"]
+waits_for   = "all-children"
+
+# Step 3a: QE validation (parallel with senior review)
+[[steps]]
+id          = "qe-validate"
+title       = "QE validation: {{feature}}"
+description = "Validate test coverage and ensure all tests pass. Write missing tests. Report coverage gaps."
+type        = "task"
+assignee    = "qe"
+needs       = ["develop"]
+
+# Step 3b: Senior review (parallel with QE)
+[[steps]]
+id          = "senior-review"
+title       = "Senior review: {{feature}}"
+description = "Review code quality, architecture adherence, and production readiness. Provide structured feedback."
+type        = "task"
+assignee    = "senior"
+needs       = ["develop"]
+
+[steps.check]
+max_attempts = 3
+
+# Step 4: Fix cycle (if QE or senior review found issues)
+[[steps]]
+id          = "fix-cycle"
+title       = "Fix cycle: {{feature}}"
+description = "Address feedback from QE validation and senior review. The planner dispatches targeted fixes to the dog pool."
+type        = "task"
+assignee    = "planner"
+needs       = ["qe-validate", "senior-review"]
+
+# Step 5: Final verification against ADR
+[[steps]]
+id          = "final-check"
+title       = "Final ADR verification: {{feature}}"
+description = "Re-read the ADR at {{adr}} and verify every requirement has been implemented. Verify test coverage meets the ADR's testing strategy. Close the molecule if complete, or create targeted fix-beads if gaps remain."
+type        = "task"
+assignee    = "planner"
+needs       = ["fix-cycle"]

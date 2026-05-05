@@ -101,6 +101,9 @@ RUN mkdir -p /etc/skel/.config/gascity && \
         'provider = "bd"' \
     > /etc/skel/.config/gascity/city.toml
 
+# ---- Ship ADR pipeline pack ----
+COPY pack/ /opt/adr-pipeline/
+
 # ---- Verify installations ----
 RUN gc version && \
     dolt version && \

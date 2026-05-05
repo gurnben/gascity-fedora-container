@@ -1,0 +1,43 @@
+# Architecture phase: design → review loop → human approval
+formula     = "mol-architecture"
+description = "ADR design and review loop with human approval gate"
+version     = 1
+type        = "workflow"
+phase       = "liquid"
+pour        = true
+
+[vars.feature]
+description = "Feature or epic description"
+required    = true
+
+# Step 1: Architect writes the ADR
+[[steps]]
+id          = "design"
+title       = "Design ADR: {{feature}}"
+description = "Write an Architecture Decision Record for: {{feature}}. Follow the ADR template in your prompt. When complete, send to the reviewer for feedback."
+type        = "task"
+assignee    = "architect"
+
+# Step 2: Reviewer reviews the ADR (up to 3 rounds via ralph/check)
+[[steps]]
+id          = "review"
+title       = "Review ADR: {{feature}}"
+description = "Review the ADR written by the architect. Provide structured feedback. When no blocking or important feedback remains, explicitly approve."
+type        = "task"
+assignee    = "reviewer"
+needs       = ["design"]
+
+[steps.check]
+max_attempts = 3
+
+# Step 3: Human approval gate
+[[steps]]
+id          = "human-approval"
+title       = "Human approval: {{feature}} ADR"
+description = "The architect and reviewer have converged on the ADR. Review it and approve to proceed to development planning."
+type        = "task"
+needs       = ["review"]
+
+[steps.gate]
+type    = "human"
+timeout = "72h"

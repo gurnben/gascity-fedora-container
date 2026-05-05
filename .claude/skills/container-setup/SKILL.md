@@ -126,15 +126,50 @@ Test Vertex AI authentication:
 claude -p "respond with hello" --output-format text
 ```
 
-## Step 6 — Initialize a gascity workspace
+## Step 6 — Initialize a gascity workspace with the ADR pipeline pack
+
+The container ships an ADR pipeline pack at `/opt/adr-pipeline/` with agents
+for architect, reviewer, planner, developer pool, QE, and senior reviewer.
 
 ```bash
 cd /workspace
 gc init --skip-provider-readiness .
 ```
 
+When prompted for a template, choose `3. custom`. Then import the pack:
+
+```bash
+# Add the pack as an import in pack.toml
+cat >> pack.toml << 'EOF'
+
+[imports.pipeline]
+source = "/opt/adr-pipeline"
+export = true
+EOF
+
+# Install the import
+gc import install
+```
+
 > The `--skip-provider-readiness` flag is required when using Vertex AI because
 > gascity's readiness check only recognizes first-party `claude.ai` OAuth login.
+
+### Using the ADR pipeline
+
+The pack provides two formulas:
+
+**Architecture phase** (design → review → human approval):
+```bash
+gc formula cook mol-architecture --var feature="My Feature"
+gc sling architect <root-bead-id>
+```
+
+**Development phase** (plan → develop → QE + senior review → verify):
+```bash
+gc sling planner "Implement ADR: <title> — see docs/adr/00XX-*.md"
+# Or use the formula directly:
+gc formula cook mol-dev-pipeline --var feature="My Feature" --var adr="docs/adr/00XX-*.md"
+```
 
 ## Step 7 — Start the gascity supervisor
 

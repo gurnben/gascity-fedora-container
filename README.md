@@ -21,6 +21,23 @@ runtimes.
 System dependencies (tmux, git, jq, lsof, flock, Go, Node.js) are installed
 from Fedora's native repositories.
 
+### ADR Pipeline Pack
+
+The container ships a gascity pack at `/opt/adr-pipeline/` that implements
+an ADR-driven development pipeline:
+
+1. **Architecture phase** — architect writes an ADR, reviewer iterates (max 3 rounds), human approves
+2. **Development phase** — planner breaks work into parallel tasks, dog pool implements, QE and senior review run in parallel, fix cycles loop, planner verifies against ADR
+
+| Agent | Role | Type |
+|-------|------|------|
+| `architect` | Writes ADRs | Named session |
+| `reviewer` | Reviews ADRs | Named session |
+| `planner` | Breaks ADRs into tasks, dispatches, verifies | Named session |
+| `dog` | Implements features | Pool (up to 6) |
+| `qe` | Validates tests and coverage | Named session |
+| `senior` | Code review | Named session |
+
 ## Installation
 
 Pull the pre-built image:
