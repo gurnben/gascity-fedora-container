@@ -4,11 +4,6 @@ schema = 2
 version = "0.1.0"
 description = "ADR-driven development pipeline: architecture → review → plan → develop → QE → senior review"
 
-[agent_defaults]
-provider              = "claude"
-scope                 = "rig"
-default_sling_formula = "mol-dev-pipeline"
-
 # --- Named sessions (always-on coordination agents) ---
 
 [[named_session]]
