@@ -13,7 +13,7 @@ orchestration SDK and several agentic coding runtimes.
 ├── Containerfile                    # Multi-stage container build definition
 ├── compose.yaml                     # Compose configuration for local development
 ├── .dockerignore                    # Files excluded from container build context
-├── .crush/skills/container-setup/   # Skill for standing up and configuring the container
+├── .claude/skills/container-setup/   # Skill for standing up and configuring the container
 ├── .github/
 │   ├── dependabot.yml               # Weekly dependency update configuration
 │   └── workflows/
@@ -52,7 +52,7 @@ podman-compose up -d
 
 ## Skills
 
-- **container-setup** (`.crush/skills/container-setup/SKILL.md`): Step-by-step
+- **container-setup** (`.claude/skills/container-setup/SKILL.md`): Step-by-step
   guide for starting the container, configuring Vertex AI, initializing gascity,
   and troubleshooting common issues.
 
