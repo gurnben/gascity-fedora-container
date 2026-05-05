@@ -13,6 +13,7 @@ orchestration SDK and several agentic coding runtimes.
 ├── Containerfile                    # Multi-stage container build definition
 ├── compose.yaml                     # Compose configuration for local development
 ├── .dockerignore                    # Files excluded from container build context
+├── .crush/skills/container-setup/   # Skill for standing up and configuring the container
 ├── .github/
 │   ├── dependabot.yml               # Weekly dependency update configuration
 │   └── workflows/
@@ -44,8 +45,16 @@ podman-compose up -d
   since no RPM is available.
 - **fedora-toolbox:latest base**: Provides a rich interactive environment
   suitable for development workflows.
+- **Non-root user**: Container runs as `gascity` (UID 1000) because Claude Code
+  refuses to run as root. Use `--userns=keep-id:uid=1000,gid=1000` for mounts.
 - **Dependabot**: Monitors base image, GitHub Actions, and npm for weekly
   updates that trigger automatic rebuilds.
+
+## Skills
+
+- **container-setup** (`.crush/skills/container-setup/SKILL.md`): Step-by-step
+  guide for starting the container, configuring Vertex AI, initializing gascity,
+  and troubleshooting common issues.
 
 ## Common Tasks
 
