@@ -45,6 +45,7 @@ RUN dnf install -y \
         util-linux \
         make \
         golang \
+        openssh-clients \
     && dnf clean all
 
 # ---- Install gascity (gc) from builder stage ----
@@ -126,5 +127,15 @@ RUN dolt config --global --add user.name "gascity" && \
     dolt config --global --add user.email "gascity@container.local" && \
     git config --global user.name "gascity" && \
     git config --global user.email "gascity@container.local"
+
+# ---- Configure SSH and git credential helpers ----
+RUN mkdir -p /home/gascity/.ssh && \
+    chmod 700 /home/gascity/.ssh && \
+    printf '%s\n' \
+        'Host github.com' \
+        '  StrictHostKeyChecking accept-new' \
+        '  IdentityFile ~/.ssh/id_ed25519' \
+    > /home/gascity/.ssh/config && \
+    chmod 600 /home/gascity/.ssh/config
 
 CMD ["/bin/bash"]

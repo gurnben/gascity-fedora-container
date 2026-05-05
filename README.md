@@ -93,6 +93,34 @@ podman run --rm -it --userns=keep-id:uid=1000,gid=1000 \
 > **Tip:** Export environment variables in your shell before running —
 > bare `-e VAR` passes the host value through automatically.
 
+### GitHub Authentication
+
+The container supports both SSH key and token-based GitHub auth. Add one or
+both to your `podman run` command:
+
+**SSH key** — mount your key (read-only):
+
+```bash
+-v ~/.ssh/id_ed25519:/home/gascity/.ssh/id_ed25519:ro,Z
+```
+
+**GitHub token** — pass via environment variable:
+
+```bash
+-e GH_TOKEN
+```
+
+The token is used by both `gh` CLI and git HTTPS operations. To persist it for
+all exec sessions, include it in the `/etc/profile.d/` script and configure git
+to use it:
+
+```bash
+podman exec gascity sudo bash -c 'cat >> /etc/profile.d/github.sh << "EOF"
+export GH_TOKEN='"$GH_TOKEN"'
+EOF'
+podman exec gascity bash -lc 'gh auth setup-git'
+```
+
 > **Note:** Gascity's `gc init` readiness check only recognizes first-party
 > `claude.ai` OAuth login. When using Vertex AI, the check will report
 > "Claude Code: needs authentication" even though Claude is fully functional.

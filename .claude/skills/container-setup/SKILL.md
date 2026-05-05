@@ -17,6 +17,9 @@ The following environment variables must be set on the **host** before running:
 | `ANTHROPIC_VERTEX_PROJECT_ID` | GCP project ID for Vertex AI |
 | `GCP_VERTEX_JSON_PATH` | Absolute path to GCP service account JSON key |
 | `GEMINI_API_KEY` | API key for Gemini CLI |
+| `GH_TOKEN` | GitHub personal access token (optional, for HTTPS git auth) |
+
+For SSH-based GitHub auth, ensure `~/.ssh/id_ed25519` exists on the host.
 
 For basic (non-Vertex) usage, only `ANTHROPIC_API_KEY` is required.
 
@@ -50,6 +53,7 @@ podman run -d --name gascity --pids-limit=-1 \
   -v ~/Projects:/workspace:Z \
   -v ~/.config:/home/gascity/.config:Z \
   -v $GCP_VERTEX_JSON_PATH:/home/gascity/.config/gcloud/application_default_credentials.json:ro,Z \
+  -v ~/.ssh/id_ed25519:/home/gascity/.ssh/id_ed25519:ro,Z \
   -e GOOGLE_APPLICATION_CREDENTIALS=/home/gascity/.config/gcloud/application_default_credentials.json \
   -e CLAUDE_CODE_USE_VERTEX=1 \
   -e CLOUD_ML_REGION=global \
@@ -60,9 +64,14 @@ podman run -d --name gascity --pids-limit=-1 \
   -e VERTEX_LOCATION=global \
   -e GOOGLE_CLOUD_LOCATION=global \
   -e GEMINI_API_KEY \
+  -e GH_TOKEN \
   ghcr.io/gurnben/gastown-fedora-container:latest \
   sleep infinity
 ```
+
+Add either or both GitHub auth mounts/vars:
+- **SSH key**: `-v ~/.ssh/id_ed25519:/home/gascity/.ssh/id_ed25519:ro,Z`
+- **GitHub token**: `-e GH_TOKEN`
 
 ### Key flags explained
 
@@ -94,6 +103,15 @@ export VERTEX_LOCATION=global
 export GOOGLE_CLOUD_LOCATION=global
 export GEMINI_API_KEY='"$GEMINI_API_KEY"'
 EOF'
+```
+
+If using a GitHub token, persist it and configure git to use it:
+
+```bash
+podman exec gascity sudo bash -c 'cat > /etc/profile.d/github.sh << "EOF"
+export GH_TOKEN='"$GH_TOKEN"'
+EOF'
+podman exec gascity bash -lc 'gh auth setup-git'
 ```
 
 ## Step 4 — Configure identities
