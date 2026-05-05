@@ -104,7 +104,15 @@ podman exec -it gascity bash -l
 
 The `-l` flag starts a login shell that sources `/etc/profile.d/`.
 
-## Step 5 — Verify tools work
+## Step 5 — Configure identities and verify tools
+
+Ensure dolt and git have identities configured (required for the beads store):
+
+```bash
+podman exec gascity bash -lc 'dolt config --global --add user.name "gascity" && dolt config --global --add user.email "gascity@container.local" && git config --global user.name "gascity" && git config --global user.email "gascity@container.local"'
+```
+
+Verify tools:
 
 ```bash
 claude --version
