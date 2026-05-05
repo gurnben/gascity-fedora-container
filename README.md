@@ -160,9 +160,8 @@ podman exec -it gascity bash -l
 - Initialize a gascity workspace inside the container:
 
   ```bash
-  gc init ~/my-workspace
-  cd ~/my-workspace
-  gc start
+  gc init --skip-provider-readiness /workspace
+  cd /workspace
   ```
 
 > **Note:** Containers do not run a user-level systemd instance, so
@@ -176,6 +175,67 @@ podman exec -it gascity bash -l
 > # Check on it anytime
 > tmux attach -t gc
 > ```
+
+### Setting Up the ADR Pipeline Pack
+
+After initializing a workspace, import the pre-installed ADR pipeline pack:
+
+```bash
+cd /workspace
+
+# Add the pack import to your pack.toml
+cat >> pack.toml << 'EOF'
+
+[imports.pipeline]
+source = "/opt/adr-pipeline"
+export = true
+EOF
+
+# Install the import
+gc import install
+```
+
+Then restart the supervisor to pick up the new agents:
+
+```bash
+tmux kill-session -t gc 2>/dev/null
+gc unregister /workspace 2>/dev/null
+tmux new-session -d -s gc 'gc start --foreground'
+```
+
+Verify the agents are running:
+
+```bash
+gc session list    # should show architect, reviewer, planner, qe, senior
+gc doctor          # should pass all checks
+```
+
+### Using the Pipeline
+
+**Start the architecture phase** (design → review → your approval):
+
+```bash
+gc formula cook mol-architecture --var feature="My Feature"
+gc sling architect <bead-id>
+```
+
+The architect writes an ADR and iterates with the reviewer (up to 3 rounds).
+When they converge, you'll receive a mail notification. Review the ADR and
+approve the human gate to proceed.
+
+**Start the development phase** (after approving the ADR):
+
+```bash
+gc formula cook mol-dev-pipeline \
+  --var feature="My Feature" \
+  --var adr="docs/adr/00XX-my-feature.md"
+gc sling planner <bead-id>
+```
+
+The planner reads the ADR, breaks work into parallel tasks with file ownership
+boundaries, dispatches to the dog pool (up to 6 agents), then QE and senior
+review run in parallel. Fix cycles loop until quality gates pass, and the
+planner runs a final check against the ADR.
 
 - Launch an agentic runtime:
 
