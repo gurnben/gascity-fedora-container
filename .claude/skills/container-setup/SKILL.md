@@ -1,11 +1,11 @@
 ---
 name: container-setup
-description: Use when the user wants to start, stop, configure, or debug the gastown-fedora-container with podman — including Vertex AI setup, ADR pipeline pack, gascity initialization, and session troubleshooting.
+description: Use when the user wants to start, stop, configure, or debug the gascity-fedora-container with podman — including Vertex AI setup, ADR pipeline pack, gascity initialization, and session troubleshooting.
 ---
 
 # Gastown Fedora Container Setup
 
-This skill automates standing up and configuring the gastown-fedora-container
+This skill automates standing up and configuring the gascity-fedora-container
 for agentic development with gascity and the ADR pipeline pack.
 
 ## Prerequisites
@@ -45,7 +45,7 @@ podman run -d --name gascity --pids-limit=-1 \
   -v ~/.ssh/agent-key:/home/gascity/.ssh/id_ed25519:ro,Z \
   -e ANTHROPIC_API_KEY \
   -e GH_TOKEN \
-  ghcr.io/gurnben/gastown-fedora-container:latest \
+  ghcr.io/gurnben/gascity-fedora-container:latest \
   sleep infinity
 ```
 
@@ -69,7 +69,7 @@ podman run -d --name gascity --pids-limit=-1 \
   -e GOOGLE_CLOUD_LOCATION=global \
   -e GEMINI_API_KEY \
   -e GH_TOKEN \
-  ghcr.io/gurnben/gastown-fedora-container:latest \
+  ghcr.io/gurnben/gascity-fedora-container:latest \
   sleep infinity
 ```
 

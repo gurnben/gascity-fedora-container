@@ -33,7 +33,7 @@ pipeline pack.
 ## Build Commands
 
 ```bash
-podman build -t gastown-fedora -f Containerfile .   # build locally
+podman build -t gascity-fedora -f Containerfile .   # build locally
 make build                                          # same via Makefile
 make test                                           # verify tools
 make lint                                           # lint Containerfile
