@@ -4,7 +4,8 @@
 
 This repository contains a Containerfile that builds a Fedora toolbox-based
 development container. The container includes the gascity multi-agent
-orchestration SDK and several agentic coding runtimes.
+orchestration SDK, agentic coding runtimes, and an ADR-driven development
+pipeline pack.
 
 ## Repository Structure
 
@@ -13,7 +14,13 @@ orchestration SDK and several agentic coding runtimes.
 ├── Containerfile                    # Multi-stage container build definition
 ├── compose.yaml                     # Compose configuration for local development
 ├── .dockerignore                    # Files excluded from container build context
-├── .claude/skills/container-setup/   # Skill for standing up and configuring the container
+├── pack/                            # ADR pipeline pack (copied to /opt/adr-pipeline/)
+│   ├── pack.toml                    # Pack definition with named sessions
+│   ├── agents/                      # Agent configs and prompts
+│   ├── formulas/                    # mol-architecture and mol-dev-pipeline
+│   ├── assets/scripts/              # Smoke test hook
+│   └── doctor/                      # Pack health checks
+├── .claude/skills/container-setup/  # Skill for standing up and configuring the container
 ├── .github/
 │   ├── dependabot.yml               # Weekly dependency update configuration
 │   └── workflows/
@@ -26,14 +33,10 @@ orchestration SDK and several agentic coding runtimes.
 ## Build Commands
 
 ```bash
-# Build the container locally
-podman build -t gastown-fedora -f Containerfile .
-
-# Run the container
-podman run --rm -it gastown-fedora
-
-# Use compose
-podman-compose up -d
+podman build -t gastown-fedora -f Containerfile .   # build locally
+make build                                          # same via Makefile
+make test                                           # verify tools
+make lint                                           # lint Containerfile
 ```
 
 ## Key Design Decisions
@@ -43,23 +46,18 @@ podman-compose up -d
 - **Native RPMs preferred**: crush (Charm repo), claude-code (Anthropic repo),
   and opencode (GitHub release RPM) are installed as RPMs. gemini-cli uses npm
   since no RPM is available.
-- **fedora-toolbox:latest base**: Provides a rich interactive environment
-  suitable for development workflows.
 - **Non-root user**: Container runs as `gascity` (UID 1000) because Claude Code
   refuses to run as root. Use `--userns=keep-id:uid=1000,gid=1000` for mounts.
-- **Dependabot**: Monitors base image, GitHub Actions, and npm for weekly
-  updates that trigger automatic rebuilds.
+- **YOLO mode**: Claude Code runs with `--dangerously-skip-permissions`. Use
+  dedicated credentials with limited scope.
+- **ADR pipeline pack**: Ships at `/opt/adr-pipeline/` with agents (mayor,
+  architect, reviewer, planner, dog pool, qe, senior) and two formulas
+  (mol-architecture, mol-dev-pipeline).
+- **Opus 4.6 1M default**: Configured via a `claude-opus` provider preset in
+  `city.toml`.
 
 ## Skills
 
 - **container-setup** (`.claude/skills/container-setup/SKILL.md`): Step-by-step
-  guide for starting the container, configuring Vertex AI, initializing gascity,
-  and troubleshooting common issues.
-
-## Common Tasks
-
-| Task | Command |
-|------|---------|
-| Build container | `podman build -t gastown-fedora -f Containerfile .` |
-| Lint Containerfile | `hadolint Containerfile` |
-| Test image | `podman run --rm gastown-fedora gc version` |
+  guide for starting the container, configuring Vertex AI, importing the ADR
+  pipeline pack, and troubleshooting common issues.

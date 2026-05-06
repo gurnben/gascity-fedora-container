@@ -17,11 +17,15 @@ The following environment variables must be set on the **host** before running:
 | `ANTHROPIC_VERTEX_PROJECT_ID` | GCP project ID for Vertex AI |
 | `GCP_VERTEX_JSON_PATH` | Absolute path to GCP service account JSON key |
 | `GEMINI_API_KEY` | API key for Gemini CLI |
-| `GH_TOKEN` | GitHub personal access token (optional, for HTTPS git auth) |
+| `GH_TOKEN` | GitHub personal access token (for HTTPS git auth) |
 
-For SSH-based GitHub auth, ensure `~/.ssh/id_ed25519` exists on the host.
+For SSH-based GitHub auth, ensure the SSH private key exists on the host.
 
 For basic (non-Vertex) usage, only `ANTHROPIC_API_KEY` is required.
+
+> **Security:** Use a dedicated GitHub account with a scoped token. The
+> container runs Claude Code in YOLO mode — agents execute commands without
+> confirmation. Never pass personal credentials.
 
 ## Step 1 — Remove any existing container
 
@@ -38,9 +42,9 @@ podman run -d --name gascity --pids-limit=-1 \
   --userns=keep-id:uid=1000,gid=1000 \
   -v ~/Projects:/workspace:Z \
   -v ~/.config:/home/gascity/.config:Z \
+  -v ~/.ssh/agent-key:/home/gascity/.ssh/id_ed25519:ro,Z \
   -e ANTHROPIC_API_KEY \
-  -e OPENAI_API_KEY \
-  -e GEMINI_API_KEY \
+  -e GH_TOKEN \
   ghcr.io/gurnben/gastown-fedora-container:latest \
   sleep infinity
 ```
@@ -53,7 +57,7 @@ podman run -d --name gascity --pids-limit=-1 \
   -v ~/Projects:/workspace:Z \
   -v ~/.config:/home/gascity/.config:Z \
   -v $GCP_VERTEX_JSON_PATH:/home/gascity/.config/gcloud/application_default_credentials.json:ro,Z \
-  -v ~/.ssh/id_ed25519:/home/gascity/.ssh/id_ed25519:ro,Z \
+  -v ~/.ssh/agent-key:/home/gascity/.ssh/id_ed25519:ro,Z \
   -e GOOGLE_APPLICATION_CREDENTIALS=/home/gascity/.config/gcloud/application_default_credentials.json \
   -e CLAUDE_CODE_USE_VERTEX=1 \
   -e CLOUD_ML_REGION=global \
@@ -69,24 +73,15 @@ podman run -d --name gascity --pids-limit=-1 \
   sleep infinity
 ```
 
-Add either or both GitHub auth mounts/vars:
-- **SSH key**: `-v ~/.ssh/id_ed25519:/home/gascity/.ssh/id_ed25519:ro,Z`
-- **GitHub token**: `-e GH_TOKEN`
+### Key flags
 
-### Key flags explained
+- **`--pids-limit=-1`** — gascity needs more than Podman's default 2048 processes
+- **`--userns=keep-id:uid=1000,gid=1000`** — maps host UID to container user for file access
+- **`sleep infinity`** — keeps the container alive; gascity supervisor starts manually
 
-- **`--pids-limit=-1`** — removes the default 2048 process limit; gascity
-  spawns many subprocesses via tmux, dolt, and agent runtimes
-- **`--userns=keep-id:uid=1000,gid=1000`** — maps the host user to the
-  container's `gascity` user (UID 1000) so mounted files are accessible
-- **`sleep infinity`** — keeps the container alive; the entrypoint for
-  gascity is started manually inside
+## Step 3 — Persist environment variables
 
-## Step 3 — Persist environment variables for all exec sessions
-
-Environment variables passed via `-e` at `podman run` time are only visible to
-the initial process (`sleep infinity`). Write them to `/etc/profile.d/` so
-every `bash -l` session inherits them:
+Write env vars to `/etc/profile.d/` so every `bash -l` session inherits them.
 
 ### Vertex AI
 
@@ -105,7 +100,7 @@ export GEMINI_API_KEY='"$GEMINI_API_KEY"'
 EOF'
 ```
 
-If using a GitHub token, persist it and configure git to use it:
+### GitHub token
 
 ```bash
 podman exec gascity sudo bash -c 'cat > /etc/profile.d/github.sh << "EOF"
@@ -114,42 +109,62 @@ EOF'
 podman exec gascity bash -lc 'gh auth setup-git'
 ```
 
-## Step 4 — Configure identities
+## Step 4 — Fix SSH permissions and configure identities
 
-Ensure dolt and git have identities configured (required for the beads store):
+The mounted `.ssh/` directory may be owned by root. Fix ownership and write
+the SSH config:
 
 ```bash
-podman exec gascity bash -lc 'dolt config --global --add user.name "gascity" && dolt config --global --add user.email "gascity@container.local" && git config --global user.name "gascity" && git config --global user.email "gascity@container.local"'
+podman exec gascity sudo bash -c \
+  'chown gascity:gascity /home/gascity/.ssh && \
+   chmod 700 /home/gascity/.ssh && \
+   cat > /home/gascity/.ssh/config << "EOF"
+Host github.com
+  StrictHostKeyChecking accept-new
+  IdentityFile ~/.ssh/id_ed25519
+EOF
+   chown gascity:gascity /home/gascity/.ssh/config && \
+   chmod 600 /home/gascity/.ssh/config'
+```
+
+Configure git and dolt identities:
+
+```bash
+podman exec gascity bash -lc \
+  'git config --global user.name "my-agent" && \
+   git config --global user.email "my-agent@users.noreply.github.com" && \
+   dolt config --global --add user.name "my-agent" && \
+   dolt config --global --add user.email "my-agent@users.noreply.github.com"'
 ```
 
 ## Step 5 — Verify tools and authentication
 
 ```bash
-podman exec gascity bash -lc 'claude --version && gc version && gh --version'
-```
-
-Test Vertex AI authentication:
-
-```bash
+podman exec gascity bash -lc 'claude --version && gc version && gh auth status'
+podman exec gascity bash -lc 'ssh -T git@github.com 2>&1 || true'
 podman exec gascity bash -lc 'claude -p "respond with hello" --output-format text'
 ```
 
-## Step 6 — Initialize a gascity workspace
+## Step 6 — Initialize workspace and import the pipeline pack
 
 ```bash
 podman exec gascity bash -lc 'cd /workspace && gc init --skip-provider-readiness .'
 ```
 
-When prompted, choose `3. custom` for the template and `1. Claude Code` for the
-agent. Ignore the systemd warning — it is expected in containers.
-
-> The `--skip-provider-readiness` flag is required when using Vertex AI because
-> gascity's readiness check only recognizes first-party `claude.ai` OAuth login.
-
-## Step 7 — Import the ADR pipeline pack
+Remove the workspace-level mayor (the pipeline pack provides its own):
 
 ```bash
-podman exec gascity bash -lc 'cd /workspace && cat >> pack.toml << "EOF"
+podman exec gascity bash -lc 'cd /workspace && rm -rf agents/mayor'
+```
+
+Update `pack.toml` to import the pipeline and remove the workspace-level
+mayor definition:
+
+```bash
+podman exec gascity bash -lc 'cd /workspace && cat > pack.toml << "EOF"
+[pack]
+name = "workspace"
+schema = 2
 
 [imports.pipeline]
 source = "/opt/adr-pipeline"
@@ -158,109 +173,105 @@ EOF'
 podman exec gascity bash -lc 'cd /workspace && gc import install'
 ```
 
-## Step 8 — Start the gascity supervisor
+## Step 7 — Configure the model
 
-Unregister the auto-registered city (from gc init) and start in foreground mode:
+Set Opus 4.6 1M as the default model and increase the startup timeout:
 
 ```bash
-podman exec gascity bash -lc 'cd /workspace && gc unregister /workspace 2>/dev/null; tmux new-session -d -s gc "gc start --foreground"'
+podman exec gascity bash -lc 'cd /workspace && cat > city.toml << "EOF"
+[workspace]
+provider = "claude-opus"
+
+[providers.claude-opus]
+base = "claude"
+args_append = ["--model", "claude-opus-4-6-max"]
+
+[session]
+startup_timeout = "120s"
+
+[daemon]
+patrol_interval = "30s"
+EOF'
 ```
 
-Check on it anytime:
+## Step 8 — Start the gascity supervisor
 
 ```bash
-podman exec gascity bash -lc 'tmux attach -t gc'
+podman exec gascity bash -lc \
+  'cd /workspace && gc unregister /workspace 2>/dev/null; \
+   tmux new-session -d -s gc "gc start --foreground"'
 ```
 
 ## Step 9 — Verify sessions
 
-Wait ~15 seconds for sessions to start, then:
+Wait ~2 minutes for all sessions to start with Vertex AI, then:
 
 ```bash
 podman exec gascity bash -lc 'cd /workspace && gc session list'
 podman exec gascity bash -lc 'cd /workspace && gc doctor'
 ```
 
-All named sessions (architect, reviewer, planner, qe, senior) should show
-`active` state. Doctor should report all checks passing.
+All sessions (mayor, architect, reviewer, planner, qe, senior, dogs) should
+show `active` state. If any are `stopped` with stale beads, clean them:
 
-## Step 10 — Enter the container
+```bash
+podman exec gascity bash -lc 'cd /workspace && gc bd close <id>; bd delete <id> --force'
+```
+
+The supervisor will recreate fresh sessions automatically.
+
+## Step 10 — Enter and use
 
 ```bash
 podman exec -it gascity bash -l
+gc session attach pipeline.mayor
 ```
 
-## Using the ADR Pipeline
-
-### Architecture phase (design → review → human approval)
-
-```bash
-gc formula cook mol-architecture --var feature="My Feature"
-gc sling architect <bead-id>
-```
-
-The architect writes an ADR and iterates with the reviewer (up to 3 rounds).
-When they converge, you receive a mail notification. Check with `gc mail inbox`.
-Review the ADR and approve the human gate to proceed.
-
-### Development phase (plan → develop → QE + senior review → verify)
-
-```bash
-gc formula cook mol-dev-pipeline \
-  --var feature="My Feature" \
-  --var adr="docs/adr/00XX-my-feature.md"
-gc sling planner <bead-id>
-```
-
-The planner reads the ADR, creates parallel tasks with file ownership, dispatches
-to the dog pool, then QE and senior review run in parallel. Fix cycles loop, and
-the planner verifies against the ADR.
+Tell the mayor what to build. Detach with `Ctrl-b d`.
 
 ## Troubleshooting
 
 ### Sessions flapping (creating → failed-create → creating)
 
-A stale bead with `pending_create_claim` can cause infinite flapping. Fix:
+A stale bead from a prior run. Clean it:
 
 ```bash
-gc session list                     # find the stuck session ID
-gc bd close <id>                    # close the stale bead
-bd delete <id> --force              # remove it permanently
+gc bd close <id>
+bd delete <id> --force
 ```
-
-The supervisor will create a fresh session automatically.
 
 ### "resource temporarily unavailable" from bd/dolt
 
-The container has hit its PID limit. Recreate with `--pids-limit=-1`.
+Recreate the container with `--pids-limit=-1`.
 
 ### "Permission denied" on mounted files
 
-The `--userns=keep-id:uid=1000,gid=1000` flag was missing. Recreate the
-container with it.
+Recreate with `--userns=keep-id:uid=1000,gid=1000`.
 
 ### "systemctl --user daemon-reload: exit status 1"
 
-Expected in containers — systemd is not available. Use
-`gc start --foreground` instead of `gc start`.
+Expected — containers lack systemd. Use `gc start --foreground`.
 
 ### "needs authentication" during gc init
 
-Use `gc init --skip-provider-readiness` when using Vertex AI.
+Use `--skip-provider-readiness` with Vertex AI.
 
-### Sessions stuck in failed-create from prior runs
+### Sessions stuck on Claude Code onboarding screen
 
-Delete the stale beads and let the supervisor recreate them:
+Pre-complete the onboarding:
 
 ```bash
-gc bd close <stuck-id>
-bd delete <stuck-id> --force
+podman exec gascity bash -lc \
+  'mkdir -p ~/.claude && \
+   echo "{\"theme\":\"dark\",\"hasCompletedOnboarding\":true}" > ~/.claude/settings.json'
 ```
 
 ### Container lifecycle
 
 ```bash
-podman stop gascity          # stop
-podman start gascity         # restart (keeps state)
+podman stop gascity                       # stop (preserves state)
+podman start gascity                      # restart
 podman stop gascity && podman rm gascity  # destroy
 ```
+
+After restart, re-run Step 8 to start the supervisor.
