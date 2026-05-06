@@ -1,43 +1,83 @@
-# Architecture phase: design → review loop → human approval
 formula     = "mol-architecture"
-description = "ADR design and review loop with human approval gate"
+description = """
+ADR design and review pipeline.
+
+The architect writes an Architecture Decision Record, the reviewer provides
+structured feedback, and they iterate up to 3 rounds. When the reviewer
+approves, the architect notifies the human for final approval.
+
+## Workflow
+
+1. Architect writes the ADR based on the feature description
+2. Architect mails the reviewer for feedback
+3. Reviewer responds with structured feedback
+4. Architect addresses feedback and re-sends (up to 3 rounds)
+5. When approved, architect mails the human for final review
+
+## Routing
+
+After cooking, sling the root bead to `pipeline.architect`:
+```bash
+gc sling pipeline.architect <bead-id>
+```
+
+The architect handles reviewer coordination via mail automatically."""
 version     = 1
-type        = "workflow"
-phase       = "liquid"
-pour        = true
 
 [vars.feature]
-description = "Feature or epic description"
-required    = true
+description = "Feature or epic description to design an ADR for"
 
-# Step 1: Architect writes the ADR
 [[steps]]
 id          = "design"
 title       = "Design ADR: {{feature}}"
-description = "Write an Architecture Decision Record for: {{feature}}. Follow the ADR template in your prompt. When complete, send to the reviewer for feedback."
-type        = "task"
-assignee    = "architect"
+description = """
+Write an Architecture Decision Record for: {{feature}}.
 
-# Step 2: Reviewer reviews the ADR (up to 3 rounds via ralph/check)
+Follow the ADR template in your prompt. Place the ADR in `docs/adr/`.
+When complete, send to the reviewer for feedback:
+```bash
+gc mail send pipeline.reviewer "ADR ready for review: {{feature}}"
+```
+
+Iterate with the reviewer up to 3 rounds. When the reviewer confirms
+no remaining feedback, notify the human:
+```bash
+gc mail send human "ADR approved and ready for your review: {{feature}}"
+```
+
+Wait for the human to approve before closing this bead."""
+
 [[steps]]
 id          = "review"
 title       = "Review ADR: {{feature}}"
-description = "Review the ADR written by the architect. Provide structured feedback. When no blocking or important feedback remains, explicitly approve."
-type        = "task"
-assignee    = "reviewer"
 needs       = ["design"]
+description = """
+Review the ADR written by the architect for: {{feature}}.
 
-[steps.check]
-max_attempts = 3
+Evaluate against architecture review criteria: completeness, feasibility,
+parallelism boundaries, file ownership, interface contracts, testing
+strategy, and risk.
 
-# Step 3: Human approval gate
+Provide structured feedback via mail to the architect:
+```bash
+gc mail send pipeline.architect "Review feedback: {{feature}}"
+```
+
+When no blocking or important feedback remains, explicitly approve:
+```bash
+gc mail send pipeline.architect "ADR approved — no remaining feedback: {{feature}}"
+```
+
+Maximum 3 review rounds. If not converging, escalate to human."""
+
 [[steps]]
-id          = "human-approval"
+id          = "approval"
 title       = "Human approval: {{feature}} ADR"
-description = "The architect and reviewer have converged on the ADR. Review it and approve to proceed to development planning."
-type        = "task"
 needs       = ["review"]
+description = """
+The architect and reviewer have converged on the ADR for: {{feature}}.
 
-[steps.gate]
-type    = "human"
-timeout = "72h"
+The human reviews the ADR and approves to proceed to development.
+This step is complete when the human confirms approval.
+
+The mayor or human should close this bead after reviewing the ADR."""
