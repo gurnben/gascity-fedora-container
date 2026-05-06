@@ -1,6 +1,6 @@
 # Gastown Fedora Container
 
-[![Build and Push](https://github.com/gurnben/gastown-fedora-container/actions/workflows/build-push.yaml/badge.svg)](https://github.com/gurnben/gastown-fedora-container/actions/workflows/build-push.yaml)
+[![Build and Push](https://github.com/gurnben/gascity-fedora-container/actions/workflows/build-push.yaml/badge.svg)](https://github.com/gurnben/gascity-fedora-container/actions/workflows/build-push.yaml)
 
 A Fedora toolbox-based development container with
 [gascity](https://github.com/gastownhall/gascity) multi-agent orchestration
@@ -56,7 +56,7 @@ podman run -d --name gascity --pids-limit=-1 \
   -v ~/.ssh/agent-key:/home/gascity/.ssh/id_ed25519:ro,Z \
   -e GH_TOKEN \
   -e ANTHROPIC_API_KEY \
-  ghcr.io/gurnben/gastown-fedora-container:latest \
+  ghcr.io/gurnben/gascity-fedora-container:latest \
   sleep infinity
 ```
 

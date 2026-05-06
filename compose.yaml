@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Containerfile
-    image: ghcr.io/gurnben/gastown-fedora-container:latest
+    image: ghcr.io/gurnben/gascity-fedora-container:latest
     user: gascity
     volumes:
       - workspace:/workspace

@@ -25,13 +25,13 @@ FROM registry.fedoraproject.org/fedora-toolbox:latest
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-LABEL name="gastown-fedora-container" \
+LABEL name="gascity-fedora-container" \
       summary="Fedora toolbox with gascity and agentic coding runtimes" \
       description="A Fedora-based development container with gascity orchestration SDK, \
         agentic coding runtimes (opencode, crush, claude-code, gemini-cli), and all \
         required dependencies pre-installed." \
       maintainer="gurnben" \
-      url="https://github.com/gurnben/gastown-fedora-container"
+      url="https://github.com/gurnben/gascity-fedora-container"
 
 # ---- System dependencies for gascity ----
 # hadolint ignore=DL3041

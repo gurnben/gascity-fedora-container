@@ -1,5 +1,5 @@
-IMAGE_NAME ?= gastown-fedora
-REGISTRY   ?= ghcr.io/gurnben/gastown-fedora-container
+IMAGE_NAME ?= gascity-fedora
+REGISTRY   ?= ghcr.io/gurnben/gascity-fedora-container
 TAG        ?= latest
 
 .PHONY: build test lint clean
