@@ -284,6 +284,30 @@ planner runs a final check against the ADR.
 - Dolt and git identities are pre-configured with defaults; override with `dolt config` / `git config` as needed
 - For Vertex AI, set the environment variables shown above and mount your GCP service account key JSON
 
+### Model Selection
+
+All agents default to Claude Opus 4.6 1M via a provider preset in `city.toml`:
+
+```toml
+[workspace]
+provider = "claude-opus"
+
+[providers.claude-opus]
+base = "claude"
+args_append = ["--model", "claude-opus-4-6-max"]
+```
+
+To use a different model, change `args_append` or define additional presets:
+
+```toml
+[providers.claude-sonnet]
+base = "claude"
+args_append = ["--model", "claude-sonnet-4-6"]
+```
+
+Then either set it as the workspace default (`provider = "claude-sonnet"`) or
+override per agent in `agent.toml` (`provider = "claude-sonnet"`).
+
 ## Development
 
 Build and test locally:
