@@ -138,4 +138,8 @@ RUN mkdir -p /home/gascity/.ssh && \
     > /home/gascity/.ssh/config && \
     chmod 600 /home/gascity/.ssh/config
 
+# ---- Enable gc bash completion ----
+RUN gc completion bash > /home/gascity/.gc-completion.bash && \
+    echo 'source ~/.gc-completion.bash' >> /home/gascity/.bashrc
+
 CMD ["/bin/bash"]
