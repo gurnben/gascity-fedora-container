@@ -184,7 +184,7 @@ provider = "claude-opus"
 
 [providers.claude-opus]
 base = "claude"
-args_append = ["--model", "claude-opus-4-6-max"]
+args_append = ["--model", "claude-opus-4-6"]
 
 [session]
 startup_timeout = "120s"
