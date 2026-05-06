@@ -142,4 +142,13 @@ RUN mkdir -p /home/gascity/.ssh && \
 RUN gc completion bash > /home/gascity/.gc-completion.bash && \
     echo 'source ~/.gc-completion.bash' >> /home/gascity/.bashrc
 
+# ---- Pre-complete Claude Code onboarding ----
+RUN mkdir -p /home/gascity/.claude && \
+    printf '%s\n' \
+        '{' \
+        '  "theme": "dark",' \
+        '  "hasCompletedOnboarding": true' \
+        '}' \
+    > /home/gascity/.claude/settings.json
+
 CMD ["/bin/bash"]
