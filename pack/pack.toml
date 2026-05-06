@@ -30,3 +30,8 @@ mode     = "always"
 template = "senior"
 scope    = "city"
 mode     = "always"
+
+[[named_session]]
+template = "mayor"
+scope    = "city"
+mode     = "always"
