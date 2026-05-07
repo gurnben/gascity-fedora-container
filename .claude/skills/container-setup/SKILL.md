@@ -202,6 +202,13 @@ podman exec gascity bash -lc \
    tmux new-session -d -s gc "gc start --foreground"'
 ```
 
+Wait ~30 seconds for sessions to spawn, then dismiss Claude Code onboarding
+prompts (theme selector + security notice) that block headless sessions:
+
+```bash
+sleep 30 && podman exec gascity bash -lc '/opt/adr-pipeline/assets/scripts/dismiss-onboarding.sh'
+```
+
 ## Step 9 — Verify sessions
 
 Wait ~2 minutes for all sessions to start with Vertex AI, then:
