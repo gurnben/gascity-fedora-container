@@ -1,0 +1,204 @@
+[pack]
+name   = "adr-pipeline-scaled"
+schema = 2
+version = "1.0.0"
+description = "ADR-driven development pipeline (scaled — up to 6 concurrent pipelines)"
+
+# --- Mayor (always-on orchestrator) ---
+
+[[named_session]]
+template = "mayor"
+scope    = "city"
+mode     = "always"
+
+# --- Pipeline slot 1 ---
+
+[[named_session]]
+name     = "architect-1"
+template = "architect"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "reviewer-1"
+template = "reviewer"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "planner-1"
+template = "planner"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "qe-1"
+template = "qe"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "senior-1"
+template = "senior"
+scope    = "city"
+mode     = "always"
+
+# --- Pipeline slot 2 ---
+
+[[named_session]]
+name     = "architect-2"
+template = "architect"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "reviewer-2"
+template = "reviewer"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "planner-2"
+template = "planner"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "qe-2"
+template = "qe"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "senior-2"
+template = "senior"
+scope    = "city"
+mode     = "always"
+
+# --- Pipeline slot 3 ---
+
+[[named_session]]
+name     = "architect-3"
+template = "architect"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "reviewer-3"
+template = "reviewer"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "planner-3"
+template = "planner"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "qe-3"
+template = "qe"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "senior-3"
+template = "senior"
+scope    = "city"
+mode     = "always"
+
+# --- Pipeline slot 4 ---
+
+[[named_session]]
+name     = "architect-4"
+template = "architect"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "reviewer-4"
+template = "reviewer"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "planner-4"
+template = "planner"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "qe-4"
+template = "qe"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "senior-4"
+template = "senior"
+scope    = "city"
+mode     = "always"
+
+# --- Pipeline slot 5 ---
+
+[[named_session]]
+name     = "architect-5"
+template = "architect"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "reviewer-5"
+template = "reviewer"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "planner-5"
+template = "planner"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "qe-5"
+template = "qe"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "senior-5"
+template = "senior"
+scope    = "city"
+mode     = "always"
+
+# --- Pipeline slot 6 ---
+
+[[named_session]]
+name     = "architect-6"
+template = "architect"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "reviewer-6"
+template = "reviewer"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "planner-6"
+template = "planner"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "qe-6"
+template = "qe"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+name     = "senior-6"
+template = "senior"
+scope    = "city"
+mode     = "always"

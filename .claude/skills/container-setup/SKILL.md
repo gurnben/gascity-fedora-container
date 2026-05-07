@@ -158,7 +158,9 @@ podman exec gascity bash -lc 'cd /workspace && rm -rf agents/mayor'
 ```
 
 Update `pack.toml` to import the pipeline and remove the workspace-level
-mayor definition:
+mayor definition. Choose one:
+
+**Singleton** (1 concurrent pipeline, ~5 GB peak RAM):
 
 ```bash
 podman exec gascity bash -lc 'cd /workspace && cat > pack.toml << "EOF"
@@ -170,6 +172,25 @@ schema = 2
 source = "/opt/adr-pipeline"
 export = true
 EOF'
+```
+
+**Scaled** (up to 6 concurrent pipelines, ~20 GB peak RAM):
+
+```bash
+podman exec gascity bash -lc 'cd /workspace && cat > pack.toml << "EOF"
+[pack]
+name = "workspace"
+schema = 2
+
+[imports.pipeline]
+source = "/opt/adr-pipeline-scaled"
+export = true
+EOF'
+```
+
+Then install the import:
+
+```bash
 podman exec gascity bash -lc 'cd /workspace && gc import install'
 ```
 
