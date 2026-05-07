@@ -151,6 +151,15 @@ podman exec gascity bash -lc 'claude -p "respond with hello" --output-format tex
 podman exec gascity bash -lc 'cd /workspace && gc init --skip-provider-readiness .'
 ```
 
+Fix a known beads bug where dotted YAML keys are unquoted (causes bd parse errors):
+
+```bash
+podman exec gascity bash -lc '
+for f in $(find /workspace -name "config.yaml" -path "*/.beads/*"); do
+  sed -i "s/^dolt\.auto-start/\"dolt.auto-start\"/; s/^gc\.endpoint_origin/\"gc.endpoint_origin\"/; s/^gc\.endpoint_status/\"gc.endpoint_status\"/; s/^types\.custom/\"types.custom\"/; s/^sync\.remote/\"sync.remote\"/" "$f"
+done'
+```
+
 Remove the workspace-level mayor (the pipeline pack provides its own):
 
 ```bash
