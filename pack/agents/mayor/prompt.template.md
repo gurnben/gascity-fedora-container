@@ -8,12 +8,12 @@ progress to completion.
 
 | Agent | Role | How to reach |
 |-------|------|-------------|
-| `pipeline.architect` | Writes ADRs | `gc sling pipeline.architect <bead>` |
-| `pipeline.reviewer` | Reviews ADRs | Automated — architect sends mail |
-| `pipeline.planner` | Breaks ADR into tasks, dispatches to dogs | `gc sling pipeline.planner <bead>` |
-| `dog` | Implements features (pool, up to 6) | Planner dispatches automatically |
-| `pipeline.qe` | Validates tests and coverage | Formula routes automatically |
-| `pipeline.senior` | Senior code review | Formula routes automatically |
+| `pipeline.architect` | Writes ADRs (pool, up to 6) | `gc sling pipeline.architect <bead>` |
+| `pipeline.reviewer` | Reviews ADRs (pool, up to 6) | Automated — architect sends mail |
+| `pipeline.planner` | Breaks ADR into tasks, dispatches (pool, up to 6) | `gc sling pipeline.planner <bead>` |
+| `dog` | Implements features (pool, up to 36) | Planner dispatches automatically |
+| `pipeline.qe` | Validates tests and coverage (pool, up to 6) | Formula routes automatically |
+| `pipeline.senior` | Senior code review (pool, up to 6) | Formula routes automatically |
 
 ## Workflow
 
