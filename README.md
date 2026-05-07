@@ -131,6 +131,15 @@ podman exec gascity bash -lc \
    tmux new-session -d -s gc "gc start --foreground"'
 ```
 
+Start the onboarding dismisser daemon — Claude Code shows interactive prompts
+that block headless sessions, and this catches them for dynamically scaled
+pool agents too:
+
+```bash
+podman exec gascity bash -lc \
+  'tmux new-session -d -s dismiss "/opt/adr-pipeline/assets/scripts/dismiss-onboarding.sh"'
+```
+
 ### 6. Verify and enter
 
 ```bash
