@@ -206,8 +206,12 @@ Wait ~30 seconds for sessions to spawn, then dismiss Claude Code onboarding
 prompts (theme selector + security notice) that block headless sessions:
 
 ```bash
-sleep 30 && podman exec gascity bash -lc '/opt/adr-pipeline/assets/scripts/dismiss-onboarding.sh'
+podman exec gascity bash -lc \
+  'tmux new-session -d -s dismiss "/opt/adr-pipeline/assets/scripts/dismiss-onboarding.sh"'
 ```
+
+This runs as a background daemon that continuously watches for new sessions
+hitting onboarding prompts, including dynamically scaled pool agents.
 
 ## Step 9 — Verify sessions
 
