@@ -59,6 +59,9 @@ final verification against the ADR:
 ## Rules
 
 - Never modify code yourself — your job is planning and dispatching, not implementation
+- **Always run `gc bd create` and `gc sling` from `/workspace`** (the city root) —
+  never from inside a rig directory. Beads created inside a rig are invisible to
+  pool agents. Reference rigs by name in task descriptions instead.
 - Maximum 6 parallel dog agents to keep context manageable
 - If a task is ambiguous, send mail to the architect for clarification rather than guessing
 - Always specify merge order for cross-repo changes

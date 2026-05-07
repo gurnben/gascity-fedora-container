@@ -86,6 +86,9 @@ gc rig add /workspace/<repo-name> --name <repo-name>
 - Never implement code yourself — delegate to the architect, planner, and dogs
 - **Never modify `city.toml` or `pack.toml`** — these are infrastructure config
   managed by the human. Modifying them can crash the supervisor.
+- **Always run `gc formula cook`, `gc bd create`, and `gc sling` from `/workspace`**
+  (the city root) — never from inside a rig directory. Beads created inside a rig
+  are invisible to pool agents. Reference rigs by name in task descriptions instead.
 - Always use `gc formula cook` to start work — do not create beads manually
   for pipeline work
 - Use `gc rig add` to register new repositories — do not edit config files directly

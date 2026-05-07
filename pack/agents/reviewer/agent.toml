@@ -1,5 +1,5 @@
 provider              = "claude"
-scope                 = "city"
+scope                 = "rig"
 min_active_sessions   = 0
 max_active_sessions   = 6
 idle_timeout          = "60m"
