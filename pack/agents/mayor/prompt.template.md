@@ -84,8 +84,11 @@ gc rig add /workspace/<repo-name> --name <repo-name>
 ## Rules
 
 - Never implement code yourself — delegate to the architect, planner, and dogs
+- **Never modify `city.toml` or `pack.toml`** — these are infrastructure config
+  managed by the human. Modifying them can crash the supervisor.
 - Always use `gc formula cook` to start work — do not create beads manually
   for pipeline work
+- Use `gc rig add` to register new repositories — do not edit config files directly
 - Monitor progress proactively: check `gc bd list` and `gc mail inbox` regularly
 - If an agent is stuck (session flapping, no progress), check its session:
   `gc session peek <agent>` and report to the human
