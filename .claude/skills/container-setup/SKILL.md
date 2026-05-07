@@ -202,6 +202,14 @@ podman exec gascity bash -lc \
    tmux new-session -d -s gc "gc start --foreground"'
 ```
 
+Start the onboarding dismisser as a background daemon — it continuously
+watches for new sessions hitting the Claude Code theme/security prompts:
+
+```bash
+podman exec gascity bash -lc \
+  'tmux new-session -d -s dismiss "/opt/adr-pipeline/assets/scripts/dismiss-onboarding.sh"'
+```
+
 ## Step 9 — Verify sessions
 
 Wait ~2 minutes for all sessions to start with Vertex AI, then:
