@@ -1,12 +1,37 @@
 [pack]
 name   = "adr-pipeline"
 schema = 2
-version = "0.2.0"
-description = "ADR-driven development pipeline: architecture → review → plan → develop → QE → senior review"
+version = "1.0.0"
+description = "ADR-driven development pipeline (singleton — 1 concurrent pipeline)"
 
-# --- Mayor (always-on orchestrator) ---
+# --- Always-on named sessions ---
 
 [[named_session]]
 template = "mayor"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+template = "architect"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+template = "reviewer"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+template = "planner"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+template = "qe"
+scope    = "city"
+mode     = "always"
+
+[[named_session]]
+template = "senior"
 scope    = "city"
 mode     = "always"
