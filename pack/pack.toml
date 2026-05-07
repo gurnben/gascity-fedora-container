@@ -1,8 +1,8 @@
 [pack]
 name   = "adr-pipeline"
 schema = 2
-version = "0.2.0"
-description = "ADR-driven development pipeline: architecture → review → plan → develop → QE → senior review"
+version = "0.3.0"
+description = "ADR-driven development pipeline using the dog pool for all roles"
 
 # --- Mayor (always-on orchestrator) ---
 

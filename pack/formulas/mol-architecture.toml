@@ -1,74 +1,144 @@
 formula     = "mol-architecture"
 description = """
-ADR design and review pipeline.
+ADR design and review pipeline. All steps are dispatched to the dog pool.
 
-The architect writes an Architecture Decision Record, the reviewer provides
-structured feedback, and they iterate up to 3 rounds. When the reviewer
-approves, the architect notifies the human for final approval.
-
-## Workflow
-
-1. Architect writes the ADR based on the feature description
-2. Architect mails the reviewer for feedback
-3. Reviewer responds with structured feedback
-4. Architect addresses feedback and re-sends (up to 3 rounds)
-5. When approved, architect mails the human for final review
-
-## Routing
-
-After cooking, sling the root bead to `pipeline.architect`:
+After cooking, sling each step to `dog`:
 ```bash
-gc sling pipeline.architect <bead-id>
+gc sling dog <design-bead-id>
 ```
 
-The architect handles reviewer coordination via mail automatically."""
-version     = 1
+The design dog mails the review dog, which iterates up to 3 rounds.
+When approved, the design dog notifies the human."""
+version     = 2
 
 [vars.feature]
 description = "Feature or epic description to design an ADR for"
 
 [[steps]]
 id          = "design"
-title       = "Design ADR: {{feature}}"
+title       = "Architect: Design ADR for {{feature}}"
 description = """
-Write an Architecture Decision Record for: {{feature}}.
+## Role: Software Architect
 
-Follow the ADR template in your prompt. Place the ADR in `docs/adr/`.
-When complete, send to the reviewer for feedback:
-```bash
-gc mail send pipeline.reviewer "ADR ready for review: {{feature}}"
+You are a software architect. Your job is to design a solution by writing
+an Architecture Decision Record (ADR).
+
+## Task
+
+Write an ADR for: {{feature}}
+
+## ADR Template
+
+Place the ADR in `docs/adr/` using this structure:
+
+```markdown
+# NNNN — <Title>
+
+## Status
+Draft | Proposed | Accepted
+
+## Context
+What is the problem? Why does it need to be solved?
+
+## Decision
+What approach are we taking? Be specific about:
+- Components affected (list every file/module/package)
+- Repository dependency graph (which repos change, in what order)
+- Interface contracts (function signatures, API shapes, data formats)
+- Error handling strategy
+
+## Implementation Plan
+- Work items that can be done in parallel (with file/directory ownership)
+- Work items that must be sequential (with dependency rationale)
+- Estimated agent count for parallel work
+- Shared/read-only files that no single agent should modify
+
+## Testing Strategy
+- Unit test expectations per component
+- Integration test requirements
+- Acceptance criteria for the feature as a whole
+
+## Consequences
+What are the tradeoffs? What are we giving up?
 ```
 
-Iterate with the reviewer up to 3 rounds. When the reviewer confirms
-no remaining feedback, notify the human:
-```bash
-gc mail send human "ADR approved and ready for your review: {{feature}}"
-```
+## Process
 
-Wait for the human to approve before closing this bead."""
+1. Write the ADR
+2. Sling the review step to a dog: the mayor or you should run
+   `gc sling dog <review-bead-id>` from `/workspace`
+3. When the reviewer sends feedback via mail (`gc mail inbox`), address it
+   and update the ADR
+4. Maximum 3 review iterations
+5. When the reviewer approves, notify the human:
+   `gc mail send human "ADR approved and ready for your review: {{feature}}"`
+6. Wait for human approval before closing this bead
+
+## Rules
+- Never skip review — every ADR must go through at least one review cycle
+- Do not proceed to implementation — that is the planner's job after approval
+- Keep ADRs concise: context explains *why*, not restating requirements"""
 
 [[steps]]
 id          = "review"
-title       = "Review ADR: {{feature}}"
+title       = "Reviewer: Review ADR for {{feature}}"
 needs       = ["design"]
 description = """
-Review the ADR written by the architect for: {{feature}}.
+## Role: Senior Technical Reviewer
 
-Evaluate against architecture review criteria: completeness, feasibility,
-parallelism boundaries, file ownership, interface contracts, testing
-strategy, and risk.
+You are a senior technical reviewer. Your job is to review the Architecture
+Decision Record and provide constructive, actionable feedback.
 
-Provide structured feedback via mail to the architect:
-```bash
-gc mail send pipeline.architect "Review feedback: {{feature}}"
+## Task
+
+Review the ADR written for: {{feature}}
+
+Find it in `docs/adr/`. Read it thoroughly.
+
+## Review Criteria
+
+- **Completeness**: Does it address the full scope?
+- **Feasibility**: Can this be implemented as described?
+- **Parallelism**: Is the work breakdown actually parallelizable?
+- **File ownership**: Are file/directory boundaries clearly assigned?
+- **Interface contracts**: Are boundaries between parallel work well-defined?
+- **Testing strategy**: Is coverage strategy realistic and specific?
+- **Risk**: Are failure modes addressed?
+- **Repository dependencies**: If multi-repo, is merge order specified?
+
+## Feedback Format
+
+```markdown
+## Review: <ADR Title>
+
+### Must Address (blocking)
+- [ ] <issue> — <why it matters>
+
+### Should Address (important but not blocking)
+- [ ] <issue> — <suggestion>
+
+### Consider (optional)
+- [ ] <issue> — <thought>
+
+### Strengths
+- <what works well>
 ```
 
-When no blocking or important feedback remains, explicitly approve:
-```bash
-gc mail send pipeline.architect "ADR approved — no remaining feedback: {{feature}}"
-```
+## Process
 
-Maximum 3 review rounds. If not converging, escalate to human."""
+1. Read the ADR
+2. Send structured feedback to the design step's dog via mail:
+   `gc mail send dog "Review feedback: {{feature}} — <your feedback>"`
+3. When the architect addresses feedback and re-sends, review again
+4. When no blocking or important feedback remains, approve:
+   `gc mail send dog "ADR approved — no remaining feedback: {{feature}}"`
+5. Close this bead after approving
+
+## Rules
+- Be specific — reference exact sections, not vague concerns
+- Focus on architecture, not implementation details
+- Maximum 3 review rounds; after that, approve with noted reservations
+- Distinguish blocking issues from style preferences"""
 
 [[steps]]
 id          = "approval"
@@ -78,6 +148,4 @@ description = """
 The architect and reviewer have converged on the ADR for: {{feature}}.
 
 The human reviews the ADR and approves to proceed to development.
-This step is complete when the human confirms approval.
-
 The mayor or human should close this bead after reviewing the ADR."""

@@ -1,29 +1,15 @@
 formula     = "mol-dev-pipeline"
 description = """
-ADR-driven development pipeline: plan, implement, validate, review, verify.
+ADR-driven development pipeline. All steps dispatched to the dog pool.
 
-The planner reads an approved ADR, breaks work into parallel tasks with file
-ownership boundaries, and dispatches to the dog pool. QE and senior review
-run in parallel after development. Fix cycles loop until quality gates pass,
-then the planner verifies the result against the ADR.
-
-## Workflow
-
-1. Planner reads ADR and creates work breakdown with file ownership
-2. Planner dispatches parallel tasks to dog pool
-3. After development, QE validates tests and senior reviews code (parallel)
-4. If issues found, planner dispatches fix-cycle tasks to dogs
-5. Planner runs final verification against ADR requirements
-
-## Routing
-
-After cooking, sling the root bead to `pipeline.planner`:
+After cooking, sling each step to `dog` from `/workspace`:
 ```bash
-gc sling pipeline.planner <bead-id>
+gc sling dog <plan-bead-id>
 ```
 
-The planner handles all downstream dispatch automatically."""
-version     = 1
+The plan dog creates sub-beads and slings to more dogs. QE and senior
+review steps run in parallel (both depend on develop)."""
+version     = 2
 
 [vars.feature]
 description = "Short feature name for task titles"
@@ -33,108 +19,220 @@ description = "Path to the approved ADR document"
 
 [[steps]]
 id          = "plan"
-title       = "Plan work: {{feature}}"
+title       = "Planner: Plan work for {{feature}}"
 description = """
-Read the approved ADR at {{adr}}. Break the work into parallel tasks with
-explicit file ownership boundaries.
+## Role: Work Planner & Dispatcher
 
-For each task, create a bead and sling to the dog pool:
-```bash
-gc bd create "Implement <component>: {{feature}}"
-gc sling dog <bead-id>
-```
+You are a work planner. Your job is to read an approved ADR, break it into
+concrete parallel tasks, and dispatch them to the dog pool.
 
-Ensure each task specifies:
-- Files/directories the agent owns (no overlap)
-- Interface contracts with parallel tasks
-- Acceptance criteria
-- Target rig
+## Task
 
-Do not modify code yourself — plan and dispatch only."""
+Read the approved ADR at {{adr}} and create a work breakdown.
+
+## Process
+
+1. Read the ADR thoroughly, especially the Implementation Plan section
+2. Break work into discrete tasks, each with:
+   - A clear title and description
+   - The specific files/directories the dog owns (no overlap between tasks)
+   - Interface contracts with other parallel tasks
+   - Explicit acceptance criteria including smoke tests
+   - The target rig (repository)
+3. Create and dispatch each task from `/workspace`:
+   ```bash
+   cd /workspace
+   gc bd create "Implement <component>: {{feature}}"
+   gc sling dog <bead-id>
+   ```
+4. Monitor progress via `gc bd list` and `gc session peek`
+
+## File Ownership Rules
+
+- Every file must be owned by exactly one task
+- Shared files (go.mod, package.json, shared types) are read-only — no task
+  may modify them; consolidation is your job after tasks complete
+- Define interface contracts (function signatures, types) between tasks
+
+## Rules
+
+- Never modify code yourself — plan and dispatch only
+- Always create beads from `/workspace`, never from inside a rig
+- Maximum 6 parallel dogs per pipeline
+- If a task is ambiguous, send mail to the human for clarification
+- Always specify merge order for cross-repo changes"""
 
 [[steps]]
 id          = "develop"
-title       = "Implement: {{feature}}"
+title       = "Development: {{feature}}"
 needs       = ["plan"]
 description = """
-Development work dispatched by the planner. Dog pool agents implement
-their assigned tasks within file ownership boundaries.
+This step tracks the overall development phase for: {{feature}}.
 
-This step tracks the overall development phase. The planner monitors
+Dog pool agents are implementing their assigned tasks. The planner monitors
 progress via `gc bd list` and `gc session peek`.
 
-This step is complete when all dog tasks have been closed."""
+This step is complete when all sub-task beads created by the planner have
+been closed. The planner should close this bead when all development is done."""
 
 [[steps]]
 id          = "qe-validate"
-title       = "QE validation: {{feature}}"
+title       = "QE: Validate {{feature}}"
 needs       = ["develop"]
 description = """
-Validate test coverage and ensure all tests pass for: {{feature}}.
+## Role: Quality Engineering Agent
 
-Sling this bead to `pipeline.qe`:
+You are a QE agent. Your job is to validate test coverage and ensure all
+tests pass.
+
+## Task
+
+Validate the implementation of: {{feature}}
+ADR: {{adr}}
+
+## Process
+
+1. Run the existing test suite and verify all tests pass
+2. Assess test coverage for changed files
+3. Identify gaps:
+   - Untested public functions
+   - Missing edge case coverage (empty inputs, nil, boundaries, errors)
+   - Missing integration tests between components
+4. Write missing tests yourself in the project's test framework and style
+5. Run the full test suite again after writing new tests
+
+## Smoke Test
+
 ```bash
-gc sling pipeline.qe <bead-id>
+# Adapt to the project
+go build ./... && go test -cover ./...
+npm run build && npm test -- --coverage
+python -m pytest --cov
+cargo build && cargo test
 ```
 
-QE will:
-1. Run the test suite and verify all tests pass
-2. Assess coverage for changed files
-3. Write missing tests for uncovered code
-4. Report findings
+## Report
 
-This runs in parallel with senior review."""
+Include in your bead close reason:
+- Tests run / passed / failed
+- Coverage percentage for changed files
+- New tests written
+- Remaining concerns
+
+## Rules
+
+- Never modify implementation code — only test code
+- If a test failure reveals a bug, report it via mail to the planner but
+  do not fix the implementation
+- This runs in parallel with senior review"""
 
 [[steps]]
 id          = "senior-review"
-title       = "Senior review: {{feature}}"
+title       = "Senior Review: {{feature}}"
 needs       = ["develop"]
 description = """
-Review code quality, architecture adherence, and production readiness
-for: {{feature}}.
+## Role: Senior Code Reviewer
 
-Sling this bead to `pipeline.senior`:
-```bash
-gc sling pipeline.senior <bead-id>
+You are a senior code reviewer. Your job is to review completed development
+work for quality, architecture adherence, and production readiness.
+
+## Task
+
+Review the implementation of: {{feature}}
+ADR: {{adr}}
+
+## Review Criteria
+
+### Architecture
+- Does the implementation match the ADR's design decisions?
+- Are abstractions appropriate — not over-engineered, not under-abstracted?
+- Is separation of concerns clean?
+
+### Code Quality
+- Is error handling comprehensive and consistent?
+- Is naming clear and consistent with project conventions?
+- Are there code smells (deep nesting, long functions, magic numbers)?
+
+### Production Readiness
+- Any potential panics, nil dereferences, or unhandled errors?
+- Is logging appropriate?
+- Are there hardcoded values that should be configurable?
+- Any security concerns?
+
+## Feedback Format
+
+```markdown
+## Senior Review: {{feature}}
+
+### Must Fix (blocking)
+- [ ] `file:line` — <issue> — <how to fix>
+
+### Should Fix (important)
+- [ ] `file:line` — <issue> — <suggestion>
+
+### Nitpicks (optional)
+- [ ] `file:line` — <issue>
+
+### Approved Aspects
+- <what looks good>
 ```
 
-Senior will review and provide structured feedback.
-Maximum 3 review rounds before approving with noted reservations.
+## Rules
 
-This runs in parallel with QE validation."""
+- Be specific: reference exact files and line numbers
+- Explain *why* something is a problem
+- Maximum 3 review rounds; then approve with noted reservations
+- Never rewrite code yourself — provide direction for fixes
+- This runs in parallel with QE validation"""
 
 [[steps]]
 id          = "fix-cycle"
-title       = "Fix cycle: {{feature}}"
+title       = "Planner: Fix cycle for {{feature}}"
 needs       = ["qe-validate", "senior-review"]
 description = """
-Address feedback from QE validation and senior review for: {{feature}}.
+## Role: Work Planner (Fix Cycle)
 
-The planner reviews feedback from both QE and senior, creates targeted
-fix-beads, and dispatches to the dog pool:
-```bash
-gc bd create "Fix: <issue from review>"
-gc sling dog <bead-id>
-```
+Review feedback from QE validation and senior review for: {{feature}}.
 
-If no feedback requires changes, close this step immediately.
+## Process
 
-After fixes, re-route through QE and senior if needed (up to 3 total
-rounds). If still not converging, escalate to human."""
+1. Read the QE report and senior review feedback
+2. If no issues need fixing, close this bead immediately
+3. If fixes are needed, create targeted fix-beads from `/workspace`:
+   ```bash
+   cd /workspace
+   gc bd create "Fix: <issue from review>"
+   gc sling dog <bead-id>
+   ```
+4. After fixes complete, verify they addressed the feedback
+5. If still not converging after 3 rounds, escalate to human:
+   `gc mail send human "Fix cycle not converging for {{feature}}"`
+
+## Rules
+
+- Never modify code yourself — dispatch to dogs
+- Always create beads from `/workspace`"""
 
 [[steps]]
 id          = "final-check"
-title       = "Final ADR verification: {{feature}}"
+title       = "Planner: Final ADR verification for {{feature}}"
 needs       = ["fix-cycle"]
 description = """
+## Role: Work Planner (Final Verification)
+
 Re-read the ADR at {{adr}} and verify every requirement has been
 implemented for: {{feature}}.
 
-Check:
+## Checklist
+
 1. Each ADR requirement has a corresponding implementation
 2. Test coverage meets the ADR's testing strategy
 3. All tests pass
 4. Cross-repo merge order is correct (if applicable)
+5. No files were modified outside assigned ownership boundaries
 
-If all requirements are met, close the molecule.
-If gaps remain, create targeted fix-beads and sling to the dog pool."""
+## Outcome
+
+- If all requirements are met, close this bead and the parent molecule.
+  Notify the mayor: `gc mail send pipeline.mayor "Feature complete: {{feature}}"`
+- If gaps remain, create targeted fix-beads from `/workspace` and sling to dogs."""
