@@ -133,6 +133,9 @@ Configure git and dolt identities:
 podman exec gascity bash -lc \
   'git config --global user.name "my-agent" && \
    git config --global user.email "my-agent@users.noreply.github.com" && \
+   git config --global commit.gpgsign true && \
+   git config --global gpg.format ssh && \
+   git config --global user.signingkey ~/.ssh/id_ed25519 && \
    dolt config --global --add user.name "my-agent" && \
    dolt config --global --add user.email "my-agent@users.noreply.github.com"'
 ```

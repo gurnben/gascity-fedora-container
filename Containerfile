@@ -127,7 +127,10 @@ WORKDIR /home/gascity
 RUN dolt config --global --add user.name "gascity" && \
     dolt config --global --add user.email "gascity@container.local" && \
     git config --global user.name "gascity" && \
-    git config --global user.email "gascity@container.local"
+    git config --global user.email "gascity@container.local" && \
+    git config --global commit.gpgsign true && \
+    git config --global gpg.format ssh && \
+    git config --global user.signingkey ~/.ssh/id_ed25519
 
 # ---- Configure SSH and git credential helpers ----
 RUN mkdir -p /home/gascity/.ssh && \
